@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Shop - Owner & Customer</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#6ee7b7;--muted:#9aa6bf;--danger:#fb7185}
+    *{box-sizing:border-box;font-family:Inter, system-ui, Arial, sans-serif}
+    body{margin:0;min-height:100vh;background:linear-gradient(180deg,#071029 0%,#001628 100%);color:#e6eef8}
+    .wrap{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between}
+    h1{margin:0;font-size:20px;letter-spacing:0.3px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+
+    .cols{display:grid;grid-template-columns:360px 1fr;gap:18px;margin-top:18px}
+
+    .login{max-width:420px;margin:40px auto}
+    .form-row{margin-bottom:12px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    button{cursor:pointer}
+    .btn{background:linear-gradient(90deg,var(--accent),#34d399);color:#042023;border:none;font-weight:600}
+    .danger{background:linear-gradient(90deg,#ff7aa2,#fb7185);color:white;border:none}
+
+    .item-row{display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;margin-bottom:10px;background:rgba(255,255,255,0.015)}
+    .item-left{flex:1}
+    .controls{display:flex;gap:8px}
+    .small{font-size:13px;color:var(--muted)}
+
+    .owner-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .chip{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.02);font-weight:600}
+
+    .cart-badge{background:#34d399;color:#042023;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:4px}
+
+    footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
+    @media(max-width:880px){.cols{grid-template-columns:1fr}.wrap{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Mini Shop — Owner & Customer</h1>
+        <div class="small">Owner: <strong>mb_owner</strong> · Customer: <strong>customer</strong></div>
+      </div>
+      <div class="small">Shop state: <span id="badgeShopState">–</span></div>
+    </header>
+
+    <!-- Login -->
+    <div id="loginView" class="card login">
+      <h2>Sign in</h2>
+      <div class="form-row"><label>User ID</label><input id="uid" placeholder="Enter ID" /></div>
+      <div class="form-row"><label>Password</label><input id="pwd" type="password" placeholder="Enter password" /></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="loginBtn" class="btn">Login</button>
+        <button id="demoBtn" class="btn">Load demo</button>
+      </div>
+    </div>
+
+    <div id="app" style="display:none">
+      <div class="cols">
+
+        <!-- LEFT SIDE -->
+        <aside class="card">
+
+          <!-- OWNER PANEL LEFT -->
+          <div id="sideOwner" style="display:none">
+            <h3>Owner dashboard</h3>
+            <div class="small">Shop Open: <strong id="ownerShopOpen"></strong></div>
+            <div class="owner-tools">
+              <button id="toggleShop" class="chip"></button>
+              <button id="addItemBtn" class="chip">+ Add item</button>
+              <button id="manageCodesBtn" class="chip">Codes</button>
+              <button id="viewNotifsBtn" class="chip">Notifications <span id="notifCount"></span></button>
+              <button id="logoutOwner" class="chip danger">Logout</button>
+            </div>
+            <hr>
+            <h4>Stock</h4>
+            <div id="ownerStockList"></div>
+            <hr>
+            <h4>Customer Orders</h4>
+            <div id="ownerOrders"></div>
+          </div>
+
+          <!-- CUSTOMER PANEL LEFT -->
+          <div id="sideCustomer" style="display:none">
+            <h3 id="welcomeCust"></h3>
+            <div class="small">Shop Open: <strong id="custShopOpen"></strong></div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="logoutCust" class="chip danger">Logout</button>
+            </div>
+            <hr>
+            <h4>Your Orders</h4>
+            <div id="customerOrders"><!-- order number and status will render here --></div>
+            <hr>
+            <h4>Available items</h4>
+            <div id="custStockList"></div>
+            <hr>
+            <button id="openCartBtn" class="chip" style="display:none">Cart <span id="cartCount"></span></button>
+          </div>
+
+        </aside>
+
+        <!-- RIGHT SIDE -->
+        <main>
+
+          <!-- OWNER MAIN -->
+          <div id="ownerPanel" class="card" style="display:none">
+            <h2>Owner — Manage Shop</h2>
+
+            <div id="itemForm" style="display:none;margin-top:12px">
+              <h4 id="itemFormTitle">Add item</h4>
+              <div class="form-row"><label>Name</label><input id="itemName" /></div>
+              <div class="form-row"><label>Price (₹)</label><input id="itemPrice" type="number" min="0" /></div>
+              <div class="form-row"><label>Quantity</label><input id="itemQty" type="number" min="0" /></div>
+              <button id="saveItemBtn" class="btn">Save</button>
+              <button id="cancelItemBtn" class="btn">Cancel</button>
+            </div>
+
+            <div id="codesPanel" style="display:none;margin-top:12px">
+              <h4>Codes</h4>
+              <div class="form-row"><label>New code</label><input id="newCodeInput" /></div>
+              <button id="addCodeBtn" class="btn">Add</button>
+              <button id="closeCodesBtn" class="btn">Close</button>
+              <div id="codesList" style="margin-top:12px"></div>
+            </div>
+
+            <div id="notifsPanel" style="display:none;margin-top:12px">
+              <h4>Notifications</h4>
+              <div id="notifsList"></div>
+              <button id="clearNotifs" class="chip">Clear</button>
+            </div>
+          </div>
+
+          <!-- CUSTOMER MAIN -->
+          <div id="customerPanel" class="card" style="display:none">
+            <h2>Shop</h2>
+            <div id="catalogList" style="margin-top:12px"></div>
+          </div>
+
+          <!-- CART PANEL -->
+          <div id="cartPanel" class="card" style="display:none">
+            <h2>Your Cart</h2>
+            <div id="cartItems"></div>
+            <hr>
+            <h4>Checkout</h4>
+            <div class="form-row"><label>Payment</label>
+              <select id="payMethod"><option value="cash">Cash</option><option value="code">Code</option></select>
+            </div>
+            <div class="form-row" id="codeRow" style="display:none"><label>Code</label><input id="codeInput" /></div>
+            <button id="checkoutBtn" class="btn">Buy</button>
+            <button id="closeCartBtn" class="btn">Close</button>
+            <div id="buyMessage" style="margin-top:12px" class="small"></div>
+          </div>
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+<script>
+// --- Robust localStorage helpers ---
+const Storage = {
+  getItems(){return JSON.parse(localStorage.getItem('items')||'[]')},
+  setItems(v){localStorage.setItem('items',JSON.stringify(v))},
+  getCodes(){return JSON.parse(localStorage.getItem('codes')||'[]')},
+  setCodes(v){localStorage.setItem('codes',JSON.stringify(v))},
+  getOpen(){const v=localStorage.getItem('open'); return v===null?false: JSON.parse(v)},
+  setOpen(v){localStorage.setItem('open',JSON.stringify(!!v))},
+  getOrders(){return JSON.parse(localStorage.getItem('orders')||'[]')},
+  setOrders(v){localStorage.setItem('orders',JSON.stringify(v))},
+  getNotifications(){return JSON.parse(localStorage.getItem('notifications')||'[]')},
+  setNotifications(v){localStorage.setItem('notifications',JSON.stringify(v))},
+  getCart(){return JSON.parse(localStorage.getItem('cart')||'[]')},
+  setCart(v){localStorage.setItem('cart',JSON.stringify(v))}
+};
+
+// --- Credentials ---
+const CREDENTIALS = { 'mb_owner':'hellomb', 'customer':'hellocustomer' };
+let currentUser = null;
+
+// --- Elements ---
+const loginView = document.getElementById('loginView');
+const app = document.getElementById('app');
+const uidEl = document.getElementById('uid');
+const pwdEl = document.getElementById('pwd');
+const loginBtn = document.getElementById('loginBtn');
+const demoBtn = document.getElementById('demoBtn');
+const badgeShopState = document.getElementById('badgeShopState');
+
+const sideOwner = document.getElementById('sideOwner');
+const ownerPanel = document.getElementById('ownerPanel');
+const sideCustomer = document.getElementById('sideCustomer');
+const customerPanel = document.getElementById('customerPanel');
+
+const ownerShopOpen = document.getElementById('ownerShopOpen');
+const custShopOpen = document.getElementById('custShopOpen');
+const toggleShopBtn = document.getElementById('toggleShop');
+
+const ownerStockList = document.getElementById('ownerStockList');
+const custStockList = document.getElementById('custStockList');
+const catalogList = document.getElementById('catalogList');
+
+const openCartBtn = document.getElementById('openCartBtn');
+const cartCountEl = document.getElementById('cartCount');
+const cartPanel = document.getElementById('cartPanel');
+const cartItemsEl = document.getElementById('cartItems');
+const payMethodEl = document.getElementById('payMethod');
+const codeRow = document.getElementById('codeRow');
+const codeInput = document.getElementById('codeInput');
+const checkoutBtn = document.getElementById('checkoutBtn');
+const closeCartBtn = document.getElementById('closeCartBtn');
+const buyMessage = document.getElementById('buyMessage');
+
+const ownerOrdersEl = document.getElementById('ownerOrders');
+
+// --- Demo loader ---
+function loadDemo(){
+  Storage.setItems([
+    {id:1,name:'Handmade Mug',price:299,qty:3},
+    {id:2,name:'Canvas Tote',price:399,qty:5},
+    {id:3,name:'Sticker Pack',price:49,qty:10}
+  ]);
+  Storage.setCodes(['Free999','HappyChristmas']);
+  Storage.setOpen(true);
+  Storage.setOrders([]);
+  Storage.setNotifications([]);
+  Storage.setCart([]);
+  location.reload();
+}
+
+demoBtn.addEventListener('click', loadDemo);
+
+// --- Login ---
+loginBtn.addEventListener('click', ()=>{
+  const u = uidEl.value.trim(); const p = pwdEl.value;
+  if(!u || !p){ alert('Enter credentials'); return }
+  if(CREDENTIALS[u] && CREDENTIALS[u]===p){ currentUser = u; showAppFor(u); }
+  else alert('Invalid credentials');
+});
+
+function showAppFor(user){ loginView.style.display='none'; app.style.display='block'; updateShopBadge(); if(user==='mb_owner') showOwner(); else showCustomer(); }
+
+// --- Shop badge/update ---
+function updateShopBadge(){ const open = Storage.getOpen(); badgeShopState.innerText = open ? 'OPEN' : 'CLOSED'; ownerShopOpen && (ownerShopOpen.innerText = open? 'Yes':'No'); custShopOpen && (custShopOpen.innerText = open? 'Yes':'No'); if(toggleShopBtn) toggleShopBtn.innerText = open? 'Close shop':'Open shop'; }
+
+// Toggle shop (owner)
+toggleShopBtn && toggleShopBtn.addEventListener('click', ()=>{ Storage.setOpen(!Storage.getOpen()); updateShopBadge(); alert('Shop is now ' + (Storage.getOpen()? 'OPEN' : 'CLOSED')); });
+
+// --- Owner view ---
+function showOwner(){ sideOwner.style.display='block'; ownerPanel.style.display='block'; sideCustomer.style.display='none'; customerPanel.style.display='none'; renderOwnerStock(); renderCodes(); renderNotifs(); renderOrders(); }
+
+// --- Customer view ---
+function showCustomer(){ sideOwner.style.display='none'; ownerPanel.style.display='none'; sideCustomer.style.display='block'; customerPanel.style.display='block'; document.getElementById('welcomeCust').innerText='Welcome, customer!'; renderCustomerStock(); renderCatalog(); updateCartUI(); renderCustomerOrders(); }
+
+// --- Stock rendering ---
+function renderOwnerStock(){ const items = Storage.getItems(); ownerStockList.innerHTML=''; if(items.length===0){ ownerStockList.innerHTML='<div class="small">No items</div>'; return }
+  items.forEach(it=>{
+    const row = document.createElement('div'); row.className='item-row';
+    row.innerHTML = `
+      <div class="item-left"><div style="font-weight:700">${it.name}</div><div class="small">₹${it.price} · Qty: ${it.qty}</div></div>
+      <div class="controls">
+        <button class="chip" data-id="${it.id}" data-action="edit">Edit</button>
+        <button class="chip" data-id="${it.id}" data-action="remove">Remove</button>
+      </div>`;
+    ownerStockList.appendChild(row);
+  });
+}
+
+ownerStockList.addEventListener('click',(e)=>{
+  const btn = e.target.closest('button'); if(!btn) return; const id = Number(btn.dataset.id); const action = btn.dataset.action;
+  if(action==='remove'){ if(!confirm('Remove item?')) return; const items = Storage.getItems().filter(x=>x.id!==id); Storage.setItems(items); renderOwnerStock(); renderCatalog(); renderCustomerStock(); }
+  if(action==='edit'){ const items = Storage.getItems(); const it = items.find(x=>x.id===id); if(!it) return; // show simple prompt edits
+    const name = prompt('Name', it.name); if(name===null) return; const price = prompt('Price', it.price); if(price===null) return; const qty = prompt('Quantity', it.qty); if(qty===null) return; it.name = name.trim() || it.name; it.price = Number(price) || it.price; it.qty = Number(qty) || it.qty; Storage.setItems(items); renderOwnerStock(); renderCatalog(); renderCustomerStock(); }
+});
+
+// --- Codes & notifs (owner) ---
+function renderCodes(){ const list = document.getElementById('codesList'); if(!list) return; const codes = Storage.getCodes(); list.innerHTML=''; if(codes.length===0){ list.innerHTML='<div class="small">No codes</div>'; return }
+  codes.forEach(c=>{ const div = document.createElement('div'); div.className='item-row'; div.innerHTML = `<div class="item-left"><div style="font-weight:700">${c}</div><div class="small">(owner only)</div></div><div class="controls"><button class="chip" data-code="${c}" data-action="rmcode">Remove</button></div>`; list.appendChild(div); });
+}
+
+document.getElementById('addCodeBtn').addEventListener('click', ()=>{ const v = document.getElementById('newCodeInput').value.trim(); if(!v) return alert('Enter code'); const codes = Storage.getCodes(); if(codes.includes(v)) return alert('Already exists'); codes.push(v); Storage.setCodes(codes); document.getElementById('newCodeInput').value=''; renderCodes(); });
+
+document.getElementById('codesList')?.addEventListener('click',(e)=>{ const btn = e.target.closest('button'); if(!btn) return; if(btn.dataset.action==='rmcode'){ if(!confirm('Remove code?')) return; const code=btn.dataset.code; const codes=Storage.getCodes().filter(x=>x!==code); Storage.setCodes(codes); renderCodes(); } });
+
+// Notifications
+function pushNotification(msg){ const n = Storage.getNotifications(); n.unshift(msg); Storage.setNotifications(n); renderNotifs(); }
+function renderNotifs(){ const list = document.getElementById('notifsList'); if(!list) return; const n = Storage.getNotifications(); list.innerHTML=''; if(n.length===0){ list.innerHTML='<div class="small">No notifications</div>'; } n.forEach(x=>{ const d = document.createElement('div'); d.className='item-row'; d.innerHTML = `<div class="item-left"><div class="small">${x}</div></div>`; list.appendChild(d); }); document.getElementById('notifCount').innerText = n.length? `(${n.length})` : ''; }
+
+document.getElementById('clearNotifs').addEventListener('click', ()=>{ if(!confirm('Clear all notifications?')) return; Storage.setNotifications([]); renderNotifs(); });
+
+// --- Customer stock & catalog ---
+function renderCustomerStock(){ const items = Storage.getItems(); custStockList.innerHTML=''; if(items.length===0){ custStockList.innerHTML='<div class="small">Shop has no items</div>'; return }
+  items.forEach(it=>{ const div = document.createElement('div'); div.className='item-row'; div.innerHTML = `<div class="item-left"><div style="font-weight:700">${it.name}</div><div class="small">₹${it.price} · Qty: ${it.qty}</div></div><button class="chip" data-id="${it.id}" onclick="addToCart(${it.id})">Add to cart</button>`; custStockList.appendChild(div); }); }
+
+function renderCatalog(){ const items = Storage.getItems(); catalogList.innerHTML=''; if(items.length===0){ catalogList.innerHTML='<div class="small">No items</div>'; return }
+  items.forEach(it=>{ const div = document.createElement('div'); div.className='item-row'; div.innerHTML = `<div class="item-left"><div style="font-weight:700">${it.name}</div><div class="small">₹${it.price} · Qty: ${it.qty}</div></div><button class="chip" onclick="addToCart(${it.id})">Add to cart</button>`; catalogList.appendChild(div); }); }
+
+// --- Cart functions ---
+function addToCart(id){ const items = Storage.getItems(); const it = items.find(x=>x.id===id); if(!it) return alert('Item not found'); if(it.qty<=0) return alert('Item out of stock'); const cart = Storage.getCart(); const c = cart.find(x=>x.id===id); if(c) c.qty++; else cart.push({id,qty:1}); Storage.setCart(cart); updateCartUI(); }
+
+function updateCartUI(){ const cart = Storage.getCart(); cartCountEl.innerText = cart.reduce((s,c)=>s+c.qty,0); openCartBtn.style.display = cart.length? 'inline-block':'none'; }
+
+openCartBtn.addEventListener('click', ()=>{ showCart(); });
+closeCartBtn.addEventListener('click', ()=>{ cartPanel.style.display='none'; });
+
+function showCart(){ const cart = Storage.getCart(); const items = Storage.getItems(); cartPanel.style.display='block'; cartItemsEl.innerHTML=''; if(cart.length===0){ cartItemsEl.innerHTML = '<div class="small">Cart is empty</div>'; return }
+  cart.forEach(c=>{ const it = items.find(i=>i.id===c.id); const div = document.createElement('div'); div.className='item-row'; div.innerHTML = `<div class="item-left"><div style="font-weight:700">${it.name}</div><div class="small">Price: ₹${it.price} · In cart: ${c.qty}</div></div><div class="controls"><button class="chip" data-id="${c.id}" data-action="inc">+</button><button class="chip" data-id="${c.id}" data-action="dec">-</button><button class="chip" data-id="${c.id}" data-action="remove">Remove</button></div>`; cartItemsEl.appendChild(div); });
+}
+
+cartItemsEl.addEventListener('click',(e)=>{ const btn = e.target.closest('button'); if(!btn) return; const id = Number(btn.dataset.id); const action = btn.dataset.action; const cart = Storage.getCart(); const idx = cart.findIndex(x=>x.id===id); if(idx===-1) return; if(action==='inc') { cart[idx].qty++; } else if(action==='dec') { cart[idx].qty--; if(cart[idx].qty<=0) cart.splice(idx,1); } else if(action==='remove'){ cart.splice(idx,1); } Storage.setCart(cart); showCart(); updateCartUI(); });
+
+// --- Checkout ---
+payMethodEl.addEventListener('change', ()=>{ codeRow.style.display = payMethodEl.value==='code' ? 'block' : 'none'; });
+checkoutBtn.addEventListener('click', ()=>{
+  if(!Storage.getOpen()) return alert('Shop is closed');
+  const cart = Storage.getCart(); if(cart.length===0) return alert('Cart empty');
+  const items = Storage.getItems(); const method = payMethodEl.value; const code = codeInput.value.trim();
+  if(method==='code'){ const codes = Storage.getCodes(); if(!codes.includes(code)) return alert('Invalid code'); }
+
+  // check stock
+  for(const c of cart){ const it = items.find(i=>i.id===c.id); if(!it || it.qty < c.qty) return alert(`Not enough stock for ${it?it.name:'item'}`); }
+
+  // decrement stock
+  for(const c of cart){ const it = items.find(i=>i.id===c.id); it.qty = it.qty - c.qty; }
+  Storage.setItems(items);
+
+  // create order (assign orderNumber)
+  const orders = Storage.getOrders();
+  const orderNumber = generateOrderNumber();
+  const order = { id: Date.now(), orderNumber, items: JSON.parse(JSON.stringify(cart)), method: method + (method==='code'?`(${code})`:''), status: 'ordered', time: Date.now(), by: 'customer' };
+  orders.push(order); Storage.setOrders(orders);
+
+  // notifications for owner
+  pushNotification(`Order ${order.orderNumber} — ${order.items.length} items — ${order.method}`);
+
+  // clear cart
+  Storage.setCart([]); updateCartUI(); showCart(); renderCatalog(); renderCustomerStock(); renderOwnerStock(); renderOrders(); renderCustomerOrders(); buyMessage.innerText = 'Order placed successfully!';
+});
+
+function generateOrderNumber(){ // simple incremental stored in localStorage
+  let n = Number(localStorage.getItem('order_seq')||0); n++; localStorage.setItem('order_seq',String(n)); return 'ORD' + String(n).padStart(5,'0'); }
+
+// --- Orders (owner) ---
+function renderOrders(){ const orders = Storage.getOrders(); ownerOrdersEl.innerHTML=''; if(orders.length===0){ ownerOrdersEl.innerHTML='<div class="small">No orders</div>'; return }
+  orders.forEach((o,idx)=>{ const div = document.createElement('div'); div.className='item-row'; const itemsDesc = o.items.map(ci=>{ const it = Storage.getItems().find(x=>x.id===ci.id); return `${it?it.name:'item'} x${ci.qty}` }).join(', ');
+    div.innerHTML = `<div class="item-left"><b>Order ${o.orderNumber}</b><div class="small">${itemsDesc}<br>Method: ${o.method} • ${new Date(o.time).toLocaleString()}<br>Status: <span id="status-${o.id}">${o.status}</span></div></div><div class="controls"><select data-order="${o.id}"><option value="ordered">ordered</option><option value="packing">packing</option><option value="making">making</option><option value="out for delivery">out for delivery</option></select></div>`;
+    const sel = div.querySelector('select'); sel.value = o.status; sel.addEventListener('change',(e)=>{ updateOrderStatus(o.id,e.target.value); }); ownerOrdersEl.appendChild(div);
+  }); }
+
+function updateOrderStatus(orderId,newStatus){ const orders = Storage.getOrders(); const o = orders.find(x=>x.id===orderId); if(!o) return; o.status = newStatus; Storage.setOrders(orders); renderOrders(); renderCustomerOrders(); }
+
+// --- Customer orders rendering ---
+function renderCustomerOrders(){ const cont = document.getElementById('customerOrders'); if(!cont) return; const orders = Storage.getOrders().filter(o=>o.by==='customer'); cont.innerHTML=''; if(orders.length===0){ cont.innerHTML='<div class="small">You have no orders</div>'; return }
+  orders.forEach(o=>{
+    const itemsDesc = o.items.map(ci=>{ const it = Storage.getItems().find(x=>x.id===ci.id); return `${it?it.name:'item'} x${ci.qty}` }).join('<br>');
+    const div = document.createElement('div'); div.className='item-row'; div.innerHTML = `<div class="item-left"><b>Order ${o.orderNumber}</b><div class="small">${itemsDesc}<br>Method: ${o.method}<br>Status: <strong>${o.status}</strong><br>${new Date(o.time).toLocaleString()}</div></div>`; cont.appendChild(div);
+  }); }
+
+// --- Init UI state ---
+(function init(){ updateShopBadge(); // wire some buttons
+  document.getElementById('logoutOwner').addEventListener('click', ()=>{ location.reload(); });
+  document.getElementById('logoutCust').addEventListener('click', ()=>{ location.reload(); });
+  document.getElementById('addItemBtn').addEventListener('click', ()=>{
+    const name = prompt('Item name'); if(!name) return; const price = Number(prompt('Price', '0')); const qty = Number(prompt('Quantity', '1'));
+    const items = Storage.getItems(); const id = Date.now(); items.push({id,name,price,qty}); Storage.setItems(items); renderOwnerStock(); renderCatalog(); renderCustomerStock(); });
+  document.getElementById('manageCodesBtn').addEventListener('click', ()=>{ document.getElementById('codesPanel').style.display='block'; renderCodes(); });
+  document.getElementById('viewNotifsBtn').addEventListener('click', ()=>{ document.getElementById('notifsPanel').style.display='block'; renderNotifs(); });
+  document.getElementById('closeCodesBtn').addEventListener('click', ()=>{ document.getElementById('codesPanel').style.display='none'; });
+})();
+
+</script>
+</body>
+</html>
